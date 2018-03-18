@@ -43,7 +43,7 @@ class Lulzscrap::Request
 
       # Prevent empty body when content is blocked by host
       return response if response&.body.is_a?(String)
-      attempts = attemps + 1
+      attempts += 1
     end
 
     raise Lulzscrap::Request::ConnectionBlockedByHost
