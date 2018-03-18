@@ -1,13 +1,14 @@
 class Lulzscrap::Scrap
   PROCESSOR_LIST = %w(Alphabetical)
 
-  def initialize(run_id:, processor:)
+  def initialize(run_id:, processor:, check_blacklist_on: nil)
     @run_id = run_id
     camelized_processor = processor.to_s.camelize
     if PROCESSOR_LIST.exclude?(camelized_processor)
       raise "Unknown processor: #{processor}"
     end
     @processor = "Lulzscrap::#{camelized_processor}".constantize.new(self)
+    @check_blacklist_on = check_blacklist_on
   end
 
   def request
@@ -53,6 +54,21 @@ class Lulzscrap::Scrap
 
   def handle_connection_error(queued_request, exception)
     log("#{exception.class}: #{exception}")
+
+    if @check_blacklist_on
+      check_response = TorManager::Tor.get(@check_blacklist_on) rescue nil
+      if check_response && check_response.code == '200' && check_response.body.empty?
+        if @run_id == 1
+          log('This IP seems to be banned.')
+          switch_tor_endpoint(queued_request, 60)
+        else
+          log('This IP seems to be banned. Wait 60s.')
+          sleep(60)
+        end
+        return true
+      end
+    end
+
     log('Connection refused. Wait 30s.')
 
     ip = TorManager::Tor.fetch_ip_address
@@ -67,17 +83,18 @@ class Lulzscrap::Scrap
       return true
     end
 
-    if @run_id == 1
-      log('Switch Tor endpoint.')
-      TorManager::Tor.switch_tor_endpoint!
-      log("Current IP address: #{TorManager::Tor.fetch_ip_address(real_ip: true)}")
-      log("Torify IP address: #{ip}")
-    end
-
-    Lulzscrap::Query.exclusive_transaction { queued_request.enqueue! }
-    sleep(30)
-
+    switch_tor_endpoint(queued_request, 30) if @run_id == 1
     true
+  end
+
+  def switch_tor_endpoint(queued_request, wait_time)
+    log('Switch Tor endpoint.')
+    TorManager::Tor.switch_tor_endpoint!
+    log("Current IP address: #{TorManager::Tor.fetch_ip_address(real_ip: true)}")
+    log("Torify IP address: #{ip}")
+    log('Re-enqueue request and sleep 30s.')
+    Lulzscrap::Query.exclusive_transaction { queued_request.enqueue! }
+    sleep(wait_time)
   end
 
   def handle_unknown_exception(queued_request, exception)
