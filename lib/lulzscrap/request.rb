@@ -27,7 +27,7 @@ class Lulzscrap::Request
       end
 
       if response.body.empty?
-        log("Empty response received. User agent is: #{request['User-Agent']}")
+        @scrap.log("Empty response received. User agent is: #{request['User-Agent']}")
         sleep 3
         nil
       else
