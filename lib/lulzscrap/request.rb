@@ -4,9 +4,9 @@ class Lulzscrap::Request
   end
 
   def put(string_uri, headers:, body:)
-    headers = headers.dup
+    original_headers = headers.dup
     loop_on_request(times: 3) do
-
+      headers = original_headers.dup
       uri = URI.parse(string_uri)
       request = Net::HTTP::Put.new(uri)
 
