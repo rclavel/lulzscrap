@@ -1,4 +1,6 @@
 module Lulzscrap
+  require 'activerecord-import'
+
   if defined?(Rails)
     require 'lulzscrap/engine'
   else
