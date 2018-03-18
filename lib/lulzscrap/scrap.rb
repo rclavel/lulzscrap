@@ -60,7 +60,8 @@ class Lulzscrap::Scrap
       if check_response && check_response.code == '200' && check_response.body.empty?
         if @run_id == 1
           log('This IP seems to be banned.')
-          switch_tor_endpoint(queued_request, 60)
+          ip = TorManager::Tor.fetch_ip_address
+          switch_tor_endpoint(queued_request, ip, 60)
         else
           log('This IP seems to be banned. Wait 60s.')
           sleep(60)
@@ -83,11 +84,11 @@ class Lulzscrap::Scrap
       return true
     end
 
-    switch_tor_endpoint(queued_request, 30) if @run_id == 1
+    switch_tor_endpoint(queued_request, ip, 30) if @run_id == 1
     true
   end
 
-  def switch_tor_endpoint(queued_request, wait_time)
+  def switch_tor_endpoint(queued_request, ip, wait_time)
     log('Switch Tor endpoint.')
     TorManager::Tor.switch_tor_endpoint!
     log("Current IP address: #{TorManager::Tor.fetch_ip_address(real_ip: true)}")
