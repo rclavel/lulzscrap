@@ -4,8 +4,8 @@ class Lulzscrap::Request
   end
 
   def put(string_uri, headers:, body:)
+    headers = headers.dup
     loop_on_request(times: 3) do
-      headers = headers.dup
 
       uri = URI.parse(string_uri)
       request = Net::HTTP::Put.new(uri)
@@ -43,7 +43,7 @@ class Lulzscrap::Request
 
       # Prevent empty body when content is blocked by host
       return response if response&.body.is_a?(String)
-      attempts += 1
+      attempts = attemps + 1
     end
 
     raise Lulzscrap::Request::ConnectionBlockedByHost
