@@ -70,7 +70,7 @@ class Lulzscrap::Scrap
       end
     end
 
-    log('Connection refused. Wait 30s.')
+    log('Connection refused.')
 
     ip = TorManager::Tor.fetch_ip_address
     queued_request.errors_by_ip = {} if queued_request.errors_by_ip.is_a?(String)
